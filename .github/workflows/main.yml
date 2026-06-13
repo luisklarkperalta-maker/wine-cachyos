@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout specific branch
+      - name: Checkout branch
         uses: actions/checkout@v4
         with:
-          ref: cachyos_11.0_20260601/main_native
+          ref: cachyos_11.0_20260601
 
       - name: Enable i386 architecture
         run: |
@@ -63,24 +63,24 @@ jobs:
 
       - name: Run prepare.sh
         run: |
-          cd main_native
-          chmod +x prepare.sh
-          ./prepare.sh
+          cd cachyos_11.0_20260601/main_native
+          chmod +x ../prepare.sh
+          ../prepare.sh
 
       - name: Run build.sh (WoW64)
         run: |
-          cd main_native
-          chmod +x build.sh
-          ./build.sh
+          cd cachyos_11.0_20260601/main_native
+          chmod +x ../build.sh
+          ../build.sh
 
       - name: Run package.sh
         run: |
-          cd main_native
-          chmod +x package.sh
-          ./package.sh
+          cd cachyos_11.0_20260601/main_native
+          chmod +x ../package.sh
+          ../package.sh
 
       - name: Upload Wine-CachyOS WoW64 build
         uses: actions/upload-artifact@v4
         with:
           name: wine-cachyos-wow64-cachyos_11.0_20260601
-          path: main_native/*.tar.zst
+          path: cachyos_11.0_20260601/main_native/*.tar.zst
