@@ -11,7 +11,7 @@ jobs:
       - name: Checkout specific branch
         uses: actions/checkout@v4
         with:
-          ref: cachyos_11.0_20260601
+          ref: cachyos_11.0_20260601/main_native
 
       - name: Enable i386 architecture
         run: |
