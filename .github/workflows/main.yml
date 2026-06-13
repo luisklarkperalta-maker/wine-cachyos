@@ -1,83 +1,105 @@
-name: Build Wine-CachyOS WoW64 (cachyos_11.0_20260601/main_native)
+name: Build Wine-CachyOS WoW64
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout correct branch
+      - name: Checkout trial branch
         uses: actions/checkout@v4
         with:
-          ref: cachyos_11.0_20260601/main_native
+          ref: trial
+          fetch-depth: 0
 
       - name: Enable i386 architecture
         run: |
           sudo dpkg --add-architecture i386
           sudo apt update
 
-      - name: Install Wine WoW64 build dependencies
+      - name: Install dependencies
         run: |
           sudo apt install -y \
             build-essential \
-            gcc-multilib g++-multilib \
-            flex bison \
-            ninja-build meson cmake \
-            python3 git patch gettext \
-            libx11-dev libx11-dev:i386 \
-            libfreetype6-dev libfreetype6-dev:i386 \
-            libglib2.0-dev \
-            libgnutls28-dev \
-            libvulkan-dev \
-            libasound2-dev libasound2-dev:i386 \
-            libpulse-dev libpulse-dev:i386 \
-            libgstreamer1.0-dev \
-            libgstreamer-plugins-base1.0-dev \
-            libxext-dev libxext-dev:i386 \
-            libxrender-dev libxrender-dev:i386 \
-            libxrandr-dev libxrandr-dev:i386 \
-            libxi-dev libxi-dev:i386 \
-            libxcursor-dev libxcursor-dev:i386 \
-            libxinerama-dev libxinerama-dev:i386 \
-            libxxf86vm-dev libxxf86vm-dev:i386 \
-            libxcomposite-dev libxcomposite-dev:i386 \
-            libxdamage-dev libxdamage-dev:i386 \
-            libxfixes-dev libxfixes-dev:i386 \
-            libxkbcommon-dev \
-            libdbus-1-dev \
+            gcc-multilib \
+            g++-multilib \
+            flex \
+            bison \
+            gettext \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            mingw-w64 \
+            clang \
+            llvm \
+            python3 \
+            libx11-dev \
+            libx11-dev:i386 \
+            libfreetype6-dev \
+            libfreetype6-dev:i386 \
             libfontconfig1-dev \
-            libkrb5-dev \
-            libunwind-dev \
-            libudev-dev \
-            libusb-1.0-0-dev \
-            libpcap-dev \
-            libxml2-dev \
-            libxslt1-dev \
-            libjpeg-dev \
-            libpng-dev \
-            libtiff-dev \
-            libfaudio-dev libfaudio-dev:i386 \
-            zstd
+            libfontconfig1-dev:i386 \
+            libxcursor-dev \
+            libxcursor-dev:i386 \
+            libxi-dev \
+            libxi-dev:i386 \
+            libxrandr-dev \
+            libxrandr-dev:i386 \
+            libxinerama-dev \
+            libxinerama-dev:i386 \
+            libxcomposite-dev \
+            libxcomposite-dev:i386 \
+            libxrender-dev \
+            libxrender-dev:i386 \
+            libxext-dev \
+            libxext-dev:i386 \
+            libxfixes-dev \
+            libxfixes-dev:i386 \
+            libxkbcommon-dev \
+            libxkbcommon-dev:i386 \
+            libglu1-mesa-dev \
+            libglu1-mesa-dev:i386 \
+            libvulkan-dev \
+            libvulkan-dev:i386 \
+            libasound2-dev \
+            libasound2-dev:i386 \
+            libpulse-dev \
+            libpulse-dev:i386
 
-      - name: Run prepare.sh
+      - name: Generate configure
         run: |
-          chmod +x prepare.sh
-          ./prepare.sh
+          if [ -f autogen.sh ]; then
+            chmod +x autogen.sh
+            ./autogen.sh
+          fi
 
-      - name: Run build.sh (WoW64)
+      - name: Configure
         run: |
-          chmod +x build.sh
-          ./build.sh
+          mkdir build
+          cd build
 
-      - name: Run package.sh
+          ../configure \
+            --enable-archs=i386,x86_64
+
+      - name: Build
         run: |
-          chmod +x package.sh
-          ./package.sh
+          cd build
+          make -j$(nproc)
 
-      - name: Upload Wine-CachyOS WoW64 build
+      - name: Install
+        run: |
+          cd build
+          make install DESTDIR=$GITHUB_WORKSPACE/package
+
+      - name: Create archive
+        run: |
+          tar -C package -czf wine-cachyos-wow64.tar.gz .
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: wine-cachyos-wow64
-          path: main_native/*.tar.zst
+          path: wine-cachyos-wow64.tar.gz
