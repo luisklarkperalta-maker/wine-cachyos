@@ -8,11 +8,6 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout specific branch
-        uses: actions/checkout@v4
-        with:
-          ref: cachyos_11.0_20260601
-
       - name: Enable i386 architecture
         run: |
           sudo dpkg --add-architecture i386
