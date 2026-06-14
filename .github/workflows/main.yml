@@ -1,4 +1,4 @@
-name: Build Wine-CachyOS WoW64
+name: Wine-CachyOS WoW64 Build
 
 on:
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
 
-      - name: Install build dependencies
+      - name: Install dependencies (stable set)
         run: |
           sudo apt-get install -y \
             build-essential \
@@ -40,16 +40,14 @@ jobs:
             libtool \
             pkg-config \
             mingw-w64 \
-            ninja-build \
             python3 \
+            ninja-build \
+            make \
+            git \
             libdrm-dev \
             libdrm-dev:i386 \
             libpciaccess-dev \
             libpciaccess-dev:i386 \
-            libwayland-dev \
-            libwayland-dev:i386 \
-            libxkbcommon-dev \
-            libxkbcommon-dev:i386 \
             libx11-dev \
             libx11-dev:i386 \
             libxext-dev \
@@ -68,6 +66,8 @@ jobs:
             libxinerama-dev:i386 \
             libxcomposite-dev \
             libxcomposite-dev:i386 \
+            libxkbcommon-dev \
+            libxkbcommon-dev:i386 \
             libfreetype6-dev \
             libfreetype6-dev:i386 \
             libfontconfig1-dev \
@@ -87,7 +87,7 @@ jobs:
             libudev-dev \
             libudev-dev:i386
 
-      - name: Generate configure
+      - name: Generate configure (if needed)
         run: |
           if [ -f autogen.sh ]; then
             chmod +x autogen.sh
@@ -100,29 +100,33 @@ jobs:
       - name: Configure WoW64
         run: |
           cd build
-
           ../configure \
             --enable-archs=i386,x86_64 \
             --with-mingw
 
-      - name: Build
+      - name: Build (SAFE MODE)
         run: |
           cd build
-          make -j$(nproc)
+          make -j2 V=1 2>&1 | tee build.log
 
       - name: Install
         run: |
           cd build
-          make install DESTDIR="${GITHUB_WORKSPACE}/package"
+          make install DESTDIR="$GITHUB_WORKSPACE/package"
 
-      - name: Package
+      - name: Package build
         run: |
-          cd package
-          tar -czf "${GITHUB_WORKSPACE}/wine-cachyos-wow64.tar.gz" .
+          tar -czf wine-cachyos-wow64.tar.gz -C package .
 
-      - name: Upload artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: wine-cachyos-wow64
           path: wine-cachyos-wow64.tar.gz
-          retention-days: 30
+
+      - name: Upload build log (important for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build/build.log
